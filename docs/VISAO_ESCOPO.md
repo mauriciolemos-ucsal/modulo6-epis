@@ -4,7 +4,7 @@
 **Módulo:** 6 — Segurança do Trabalho
 **Disciplina:** Engenharia de Processos de Software — Semestre 2026.2
 **Professor:** Eng. Me. Rafael Bispo
-**Fase atual:** Unidade 1 (Regime Agile-Driven)
+**Status:** Concluído — versão final com backend (Java / Spring Boot) e banco relacional (MySQL)
 
 ---
 
@@ -18,22 +18,21 @@ Em canteiros de obra, o registro de riscos e incidentes normalmente é informal,
 
 ## 3. Escopo
 
-### 3.1 Dentro do escopo (Unidade 1)
-- Registro de Ocorrência (Risco Identificado, Quase-Acidente ou Acidente) com foto real (armazenamento mockado).
+### 3.1 Dentro do escopo (entregue)
+- Registro de Ocorrência (Risco Identificado, Quase-Acidente ou Acidente) com foto real, gravada em disco no servidor.
 - Associação opcional da Ocorrência a um ou mais EPIs, indicando o papel do EPI no evento (faltou / falhou / ajudou).
 - Definição de EPIs básicos por Obra (configurados na criação da obra).
 - Definição de EPIs obrigatórios por Função (ex.: soldador, eletricista).
 - Cálculo de conformidade de EPI por trabalhador (EPIs básicos da obra + EPIs obrigatórios da(s) função(ões) do trabalhador).
-- Feed cronológico de Ocorrências, visível a todos os trabalhadores da obra, mais recentes primeiro.
+- Feed cronológico de Ocorrências, visível a todos os trabalhadores da obra, mais recentes primeiro, com filtros por período (hoje, 7 dias, 30 dias) e por tipo de ocorrência.
 - Painel de indicadores agregados (contagem de ocorrências, % de conformidade, etc.), visível apenas ao Fiscal.
 - Notificações internas (estilo "sino") a cada nova Ocorrência registrada, para todos os trabalhadores da obra.
 - Papel de Fiscal: mesmo tipo de usuário que o Trabalhador comum, com permissão adicional de registrar Ocorrência em nome de outro trabalhador da mesma obra.
-- Dados mockados / sem persistência real neste estágio (decisão deliberada, conforme diretriz da disciplina).
+- Persistência real em banco relacional MySQL, acessada por um backend em Java (Spring Boot) com API REST; as regras de negócio são validadas no servidor.
 
 ### 3.2 Fora do escopo (neste módulo)
 - Controle de estoque/quantidade de EPIs no almoxarifado (requisição, entrada/saída) — pertence ao Módulo 2 (Almoxarifado e Canteiro).
 - Autenticação central / gestão de usuários do sistema como um todo (assume-se que já existe fora deste módulo).
-- Qualquer persistência real em banco de dados (fica para a Unidade 2).
 
 ## 4. Personas / Usuários
 
@@ -68,14 +67,21 @@ Em canteiros de obra, o registro de riscos e incidentes normalmente é informal,
 - RN09 — O painel de indicadores agregados é visível apenas para usuários com permissão de Fiscal.
 - RN10 — Um Fiscal só visualiza dados (feed, painel, ocorrências) da(s) obra(s) à(s) qual(is) está alocado.
 
-## 7. Restrições Técnicas Assumidas (Unidade 1)
+## 7. Arquitetura e Restrições Técnicas
 
-Conforme o Guia de Logística e Diretrizes do Semestre, a Unidade 1 adota deliberadamente um regime Agile-Driven em que a ausência de persistência real é tolerada, com dados de exibição baseados em mocks. Essa escolha é proposital: a dívida técnica assumida aqui (sem banco relacional, sem normalização) será formalmente diagnosticada e resolvida na Unidade 2, quando a arquitetura de dados (MER/DER, 3FN, tipagem DECIMAL, integridade referencial) for construída.
+A solução é composta por três partes, todas executadas localmente:
 
-Nesta fase, portanto:
-- Não há banco de dados real; os dados do feed, ocorrências, obras, funções e EPIs são simulados.
-- O upload de foto é real na interface, mas o armazenamento da imagem é mockado.
-- Notificações são simuladas na interface (sem backend de mensageria).
+- **Front-end:** React + Vite, que consome a API do backend.
+- **Backend:** Java (Spring Boot, Spring JDBC), com API REST. Valida no servidor as regras RN06 (classificação e foto obrigatórias), RN07 (papel do EPI só em Quase-Acidente e Acidente), RN08 (geração das notificações), RN09 e RN10 (permissão do Fiscal e isolamento por obra para registro e consulta de ocorrências).
+- **Banco de dados:** MySQL 8.4, com esquema relacional e carga inicial versionados por migrations (Flyway) em `backend/src/main/resources/db/migration/`. As tabelas usam chaves estrangeiras para garantir a integridade referencial.
+- **Fotos:** gravadas em uma pasta do disco local (configurável), com nome aleatório; apenas o nome do arquivo é guardado no banco. São aceitos JPG, PNG, GIF e WebP de até 10 MB.
+
+Decisões e limitações conhecidas:
+- **Autenticação:** a gestão central de usuários está fora do escopo; o acesso é por matrícula, sem senha, com sessão em memória no backend.
+- **Acesso às fotos:** as fotos são servidas sem exigir login, e o endereço de cada uma é um identificador aleatório.
+- **Painel de indicadores:** os indicadores são calculados no front-end; a restrição da RN09 ao Fiscal é aplicada na interface, e o servidor ainda não possui um endpoint próprio para o painel.
+- **EPIs em uso por trabalhador:** a origem real desse dado, necessário ao cálculo de conformidade, não está definida neste escopo e vem da carga inicial do banco.
+- **Notificações:** são registradas no banco e exibidas no sino da interface, que se atualiza periodicamente; não há envio por push, e-mail ou outro canal externo.
 
 ## 8. Glossário
 
@@ -89,4 +95,4 @@ Nesta fase, portanto:
 
 ---
 
-*Documento vivo — sujeito a revisão pela dupla (Equipe 6) ao longo da Unidade 1.*
+*Documento atualizado para a versão final do módulo (Equipe 6).*
