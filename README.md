@@ -27,7 +27,7 @@ O módulo roda com **backend Java (Spring Boot) + MySQL**, tudo local, e as foto
 - **Front-end:** React + Vite
 - **Backend:** Java (bytecode 21), Spring Boot 3.5, Spring JDBC, Flyway
 - **Banco:** MySQL 8.4 local (schema e dados iniciais versionados com Flyway)
-- **Fotos:** pasta `C:\Users\mauri\OneDrive\Documentos\fotos sfg-seguranca` (configurável, ver abaixo)
+- **Fotos:** gravadas em disco, por padrão em `%USERPROFILE%\sgf-fotos` (configurável, ver abaixo)
 
 ## Como Rodar o Projeto
 
@@ -70,6 +70,7 @@ Na tela de login, escolha um trabalhador cadastrado (login por matrícula, sem s
   /controller   #   API REST (entrada/saída HTTP, autenticação e tratamento de erros)
 /scripts        # inicialização do MySQL e do backend
 /docs           # Visão de Escopo (MD e PDF)
+  /u2           #   DER e diagrama de sequência de "registrar ocorrência", planilhas e artigo
 /mock_prototipo # protótipo de interface usado como referência
 ```
 
@@ -79,11 +80,11 @@ Na tela de login, escolha um trabalhador cadastrado (login por matrícula, sem s
 |---|---|
 | RN01, RN02 | tabelas `trabalhador` e `trabalhador_funcao` (`obra_id` obrigatório) |
 | RN03, RN04 | tabelas `obra_epi` e `funcao_epi`; telas Cadastro de Obra / Função |
-| RN05 | `episExigidos` / `calcularConformidade` em `src/domain/regras.js` |
+| RN05 | `episExigidos` / `conformidade` em `Regras.java`; `calcularConformidade` em `src/domain/regras.js` (tela Conformidade) |
 | RN06 | `validarOcorrencia` no front e em `backend/.../model/Regras.java` (garantida no servidor) |
 | RN07 | `permiteAssociarEpi`; no servidor, EPIs de Risco Identificado são descartados |
-| RN08 | `Repositorio.gerarNotificacoes` (tabela `notificacao`); sino no topo, atualizado a cada 30 s |
-| RN09 | `podeVerPainel`; menu e tela do Painel |
+| RN08 | `OcorrenciaService.registrar` → `NotificacaoRepository.gerarParaObra` (tabela `notificacao`); sino no topo, atualizado a cada 30 s |
+| RN09 | `GET /api/painel` (`PainelService`) responde 403 a quem não é Fiscal; indicadores em `Regras.indicadores` |
 | RN10 | o servidor só devolve dados da obra do usuário (`GET /api/dados`) |
 
 ## Decisões e Suposições
@@ -94,14 +95,11 @@ Pontos não definidos explicitamente na Visão de Escopo e as decisões tomadas:
 - **Foto obrigatória:** a seção 5 lista a foto junto com a classificação; a descrição é opcional.
 - **Papel do EPI obrigatório quando o EPI é marcado:** marcar um EPI sem escolher faltou/falhou/ajudou bloqueia o envio.
 - **Notificações:** seguindo a RN08 literalmente, o próprio autor também recebe a notificação.
-- **Cadastro de Obra/Função:** acessível a qualquer usuário, como no protótipo (o escopo não restringe).
+- **Cadastro de Obra/Função:** acessível a qualquer usuário, como no protótipo (o escopo não restringe). Cada usuário só altera os EPIs da própria obra; as funções são compartilhadas entre as obras (a tabela `funcao` não tem `obra_id`), então qualquer usuário logado pode alterar os EPIs obrigatórios de uma função.
 - **Login:** apenas por matrícula, sem senha (autenticação central está fora do escopo); sessão em memória no backend.
 - **Fotos:** gravadas com nome aleatório (UUID) na pasta configurada e servidas por `/api/fotos/{nome}` sem exigir login, pois a tag `<img>` não envia o cabeçalho de autenticação. Só JPG, PNG, GIF e WebP até 10 MB.
-- **Painel (RN09):** os indicadores ainda são calculados no front; o servidor não tem endpoint próprio de painel, então a restrição ao Fiscal é só de interface.
+- **Painel (RN09):** os indicadores são calculados no servidor (`GET /api/painel`), que recusa quem não é Fiscal. A tela de Conformidade continua usando os dados gerais da obra, que todo trabalhador da obra recebe.
 
 ## Gestão do Projeto
 
-O acompanhamento das tarefas é feito via GitHub Projects (Kanban), com colunas Backlog, Todo, In Progress e Done. Toda funcionalidade é rastreada por uma Issue correspondente.
-
-- [Board Kanban](#) <!-- inserir link do Project -->
-- [Issues](#) <!-- inserir link das Issues -->
+Projeto pequeno, desenvolvido de forma incremental; o andamento está registrado no histórico de commits do repositório.
