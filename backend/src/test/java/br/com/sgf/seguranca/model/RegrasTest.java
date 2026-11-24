@@ -54,6 +54,48 @@ class RegrasTest {
         assertEquals(1, Regras.validarOcorrencia("RISCO", true, longa, List.of()).size());
     }
 
+    // RN05 e painel — mesmos cenários de src/domain/regras.test.js.
+    private final List<Funcao> funcoes = List.of(
+        new Funcao("pedreiro", "Pedreiro", List.of("luva", "oculos")),
+        new Funcao("soldador", "Soldador", List.of("mascara", "oculos")));
+    private final Obra obra = new Obra("alfa", "Alfa", List.of("capacete", "bota"));
+    private final Trabalhador pedreiro = new Trabalhador("t1", "0001", "Carlos", "alfa", List.of("pedreiro"), false,
+        List.of("capacete", "bota", "luva"));
+    private final Trabalhador fiscal = new Trabalhador("t2", "0002", "Maria", "alfa", List.of("pedreiro", "soldador"),
+        true, List.of("capacete", "bota", "luva", "oculos", "mascara"));
+
+    @Test
+    void rn09SoFiscalVePainel() {
+        assertFalse(Regras.podeVerPainel(carlos));
+        assertTrue(Regras.podeVerPainel(maria));
+        assertFalse(Regras.podeVerPainel(null));
+    }
+
+    @Test
+    void rn05UneEpisDaObraEDasFuncoesSemDuplicar() {
+        assertEquals(List.of("capacete", "bota", "luva", "oculos", "mascara"),
+            Regras.episExigidos(fiscal, obra, funcoes));
+        Conformidade c = Regras.conformidade(pedreiro, obra, funcoes);
+        assertEquals(List.of("oculos"), c.faltando());
+        assertEquals(75, c.percentual());
+        assertFalse(c.conforme());
+        assertTrue(Regras.conformidade(fiscal, obra, funcoes).conforme());
+    }
+
+    @Test
+    void indicadoresContamPorTipoPapelEListamNaoConformes() {
+        var ocorrencias = List.of(
+            new Ocorrencia(1, "alfa", "RISCO", "t1", "t1", null, "", null, List.of()),
+            new Ocorrencia(2, "alfa", "ACIDENTE", "t1", "t1", null, "", null,
+                List.of(new EpiPapel("luva", "faltou"))));
+        Painel p = Regras.indicadores(ocorrencias, List.of(pedreiro, fiscal), obra, funcoes);
+        assertEquals(2, p.total());
+        assertEquals(java.util.Map.of("RISCO", 1, "QUASE_ACIDENTE", 0, "ACIDENTE", 1), p.contagem());
+        assertEquals(1, p.papeis().get("faltou"));
+        assertEquals(50, p.percentualConformes());
+        assertEquals(List.of(new Painel.NaoConforme("t1", "Carlos", List.of("oculos"))), p.naoConformes());
+    }
+
     @Test
     void fiscalRegistraEmNomeDeColegaDaMesmaObraMasNaoDeOutra() {
         assertTrue(Regras.podeRegistrarEmNomeDe(maria, carlos));

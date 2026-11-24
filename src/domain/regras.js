@@ -126,26 +126,3 @@ export function gerarNotificacoes(ocorrencia, trabalhadores, proximoId) {
       lida: false,
     }))
 }
-
-export function indicadoresDaObra(ocorrencias, trabalhadores, obra, funcoes) {
-  const contagem = { RISCO: 0, QUASE_ACIDENTE: 0, ACIDENTE: 0 }
-  const papeis = { faltou: 0, falhou: 0, ajudou: 0 }
-  for (const o of ocorrencias) {
-    contagem[o.tipo] = (contagem[o.tipo] ?? 0) + 1
-    for (const e of o.epis) papeis[e.papel] = (papeis[e.papel] ?? 0) + 1
-  }
-  const conformidades = trabalhadores.map((t) => ({
-    trabalhador: t,
-    ...calcularConformidade(t, obra, funcoes),
-  }))
-  const conformes = conformidades.filter((c) => c.conforme).length
-  return {
-    total: ocorrencias.length,
-    contagem,
-    papeis,
-    percentualConformes: trabalhadores.length
-      ? Math.round((conformes / trabalhadores.length) * 100)
-      : 100,
-    naoConformes: conformidades.filter((c) => !c.conforme),
-  }
-}

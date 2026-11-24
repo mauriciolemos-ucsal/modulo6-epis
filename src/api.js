@@ -64,6 +64,9 @@ export const api = {
 
   dados: () => requisitar('GET', '/api/dados'),
 
+  // RN09 — o servidor recusa (403) quem não é Fiscal.
+  painel: () => requisitar('GET', '/api/painel'),
+
   registrarOcorrencia({ tipo, descricao, epis, arquivoFoto, autorId }) {
     const form = new FormData()
     form.append('tipo', tipo)

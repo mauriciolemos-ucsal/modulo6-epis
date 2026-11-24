@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   permiteAssociarEpi, episExigidos, calcularConformidade, podeVerPainel,
   podeRegistrarEmNomeDe, filtrarPorObra, ordenarRecentesPrimeiro, filtrarOcorrencias,
-  validarOcorrencia, criarOcorrencia, gerarNotificacoes, indicadoresDaObra,
+  validarOcorrencia, criarOcorrencia, gerarNotificacoes,
 } from './regras.js'
 
 const funcoes = [
@@ -117,22 +117,5 @@ describe('Feed e notificações', () => {
     const notifs = gerarNotificacoes({ id: 9, obraId: 'alfa' }, [carlos, maria, paulo], 100)
     expect(notifs.map((n) => n.destinatarioId)).toEqual(['t1', 't2'])
     expect(notifs.map((n) => n.id)).toEqual([100, 101])
-  })
-})
-
-describe('Indicadores do painel', () => {
-  it('conta ocorrências por tipo e lista não conformes', () => {
-    const ind = indicadoresDaObra(
-      [
-        { tipo: 'RISCO', epis: [] },
-        { tipo: 'ACIDENTE', epis: [{ epiId: 'luva', papel: 'faltou' }] },
-      ],
-      [carlos, maria], obra, funcoes,
-    )
-    expect(ind.total).toBe(2)
-    expect(ind.contagem).toEqual({ RISCO: 1, QUASE_ACIDENTE: 0, ACIDENTE: 1 })
-    expect(ind.papeis.faltou).toBe(1)
-    expect(ind.percentualConformes).toBe(50)
-    expect(ind.naoConformes.map((c) => c.trabalhador.id)).toEqual(['t1'])
   })
 })

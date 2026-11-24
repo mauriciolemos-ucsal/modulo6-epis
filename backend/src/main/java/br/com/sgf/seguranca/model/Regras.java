@@ -1,7 +1,9 @@
 package br.com.sgf.seguranca.model;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,6 +22,57 @@ public final class Regras {
     /** RN07 — só Quase-Acidente e Acidente admitem associação com o papel do EPI. */
     public static boolean permiteAssociarEpi(String tipo) {
         return "QUASE_ACIDENTE".equals(tipo) || "ACIDENTE".equals(tipo);
+    }
+
+    /** RN09 — painel exclusivo do Fiscal. */
+    public static boolean podeVerPainel(Trabalhador usuario) {
+        return usuario != null && usuario.fiscal();
+    }
+
+    /** RN05 — EPIs exigidos = básicos da obra ∪ obrigatórios de todas as funções do trabalhador. */
+    public static List<String> episExigidos(Trabalhador trabalhador, Obra obra, List<Funcao> funcoes) {
+        Set<String> exigidos = new LinkedHashSet<>();
+        if (obra != null && obra.episBasicos() != null) exigidos.addAll(obra.episBasicos());
+        for (String funcaoId : trabalhador.funcoes()) {
+            funcoes.stream().filter(f -> f.id().equals(funcaoId)).findFirst()
+                .ifPresent(f -> exigidos.addAll(f.episObrigatorios()));
+        }
+        return List.copyOf(exigidos);
+    }
+
+    public static Conformidade conformidade(Trabalhador trabalhador, Obra obra, List<Funcao> funcoes) {
+        List<String> exigidos = episExigidos(trabalhador, obra, funcoes);
+        Set<String> emUso = new HashSet<>(trabalhador.episEmUso() == null ? List.of() : trabalhador.episEmUso());
+        List<String> faltando = exigidos.stream().filter(e -> !emUso.contains(e)).toList();
+        int percentual = exigidos.isEmpty() ? 100 : percentual(exigidos.size() - faltando.size(), exigidos.size());
+        return new Conformidade(exigidos, faltando, percentual, faltando.isEmpty());
+    }
+
+    /** Indicadores do painel do Fiscal a partir dos dados de uma única obra (RN10). */
+    public static Painel indicadores(List<Ocorrencia> ocorrencias, List<Trabalhador> trabalhadores,
+                                     Obra obra, List<Funcao> funcoes) {
+        Map<String, Integer> contagem = new LinkedHashMap<>();
+        for (String t : List.of("RISCO", "QUASE_ACIDENTE", "ACIDENTE")) contagem.put(t, 0);
+        Map<String, Integer> papeis = new LinkedHashMap<>();
+        for (String p : List.of("faltou", "falhou", "ajudou")) papeis.put(p, 0);
+        for (Ocorrencia o : ocorrencias) {
+            contagem.merge(o.tipo(), 1, Integer::sum);
+            for (EpiPapel e : o.epis()) papeis.merge(e.papel(), 1, Integer::sum);
+        }
+
+        List<Painel.NaoConforme> naoConformes = new ArrayList<>();
+        for (Trabalhador t : trabalhadores) {
+            Conformidade c = conformidade(t, obra, funcoes);
+            if (!c.conforme()) naoConformes.add(new Painel.NaoConforme(t.id(), t.nome(), c.faltando()));
+        }
+        int conformes = trabalhadores.size() - naoConformes.size();
+        int percentualConformes = trabalhadores.isEmpty() ? 100 : percentual(conformes, trabalhadores.size());
+        return new Painel(ocorrencias.size(), contagem, papeis, percentualConformes, naoConformes);
+    }
+
+    /** Arredonda como Math.round do JavaScript, para o front e o servidor mostrarem o mesmo número. */
+    private static int percentual(int parte, int todo) {
+        return (int) Math.round(parte * 100.0 / todo);
     }
 
     /** Fiscal pode registrar em nome de outro trabalhador, desde que da mesma obra (RN09/RN10). */
