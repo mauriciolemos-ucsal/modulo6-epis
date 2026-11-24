@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   permiteAssociarEpi, episExigidos, calcularConformidade, podeVerPainel,
   podeRegistrarEmNomeDe, filtrarPorObra, ordenarRecentesPrimeiro, filtrarOcorrencias,
-  validarOcorrencia, criarOcorrencia, gerarNotificacoes,
+  validarOcorrencia,
 } from './regras.js'
 
 const funcoes = [
@@ -36,13 +36,6 @@ describe('RN07 — papel do EPI', () => {
     expect(permiteAssociarEpi('ACIDENTE')).toBe(true)
   })
 
-  it('descarta EPIs ao criar um Risco Identificado', () => {
-    const o = criarOcorrencia(
-      { tipo: 'RISCO', foto: 'x', epis: [{ epiId: 'luva', papel: 'faltou' }] },
-      { id: 1, usuario: carlos, autor: carlos },
-    )
-    expect(o.epis).toEqual([])
-  })
 })
 
 describe('Permissões de Fiscal (RN09, registro em nome de outro)', () => {
@@ -88,7 +81,7 @@ describe('Validação da ocorrência', () => {
   })
 })
 
-describe('Feed e notificações', () => {
+describe('Feed', () => {
   it('ordena mais recentes primeiro', () => {
     const ordenadas = ordenarRecentesPrimeiro([
       { id: 1, dataHora: '2026-09-01T10:00:00' },
@@ -111,11 +104,5 @@ describe('Feed e notificações', () => {
     expect(ids({ periodo: 'SETE_DIAS' })).toEqual([1, 2])
     expect(ids({ periodo: 'TRINTA_DIAS', tipo: 'ACIDENTE' })).toEqual([2])
     expect(ids({ tipo: 'ACIDENTE' })).toEqual([2, 3])
-  })
-
-  it('RN08 — notifica todos os trabalhadores da obra, e só eles', () => {
-    const notifs = gerarNotificacoes({ id: 9, obraId: 'alfa' }, [carlos, maria, paulo], 100)
-    expect(notifs.map((n) => n.destinatarioId)).toEqual(['t1', 't2'])
-    expect(notifs.map((n) => n.id)).toEqual([100, 101])
   })
 })

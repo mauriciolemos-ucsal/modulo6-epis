@@ -1,6 +1,6 @@
 // Regras de negócio do Módulo 6 — Segurança do Trabalho.
-// Funções puras (sem React, sem estado global) para facilitar testes e a
-// migração para um backend real na Unidade 2.
+// Funções puras (sem React, sem estado global). O servidor (backend/.../model/Regras.java)
+// repete as validações e é quem realmente garante as regras; aqui elas dão retorno imediato na tela.
 
 export const TIPOS_OCORRENCIA = {
   RISCO: 'Risco Identificado',
@@ -97,32 +97,4 @@ export function validarOcorrencia(rascunho, { usuario, autor }) {
     if (semPapel.length) erros.push('Informe o papel (faltou / falhou / ajudou) de cada EPI marcado.')
   }
   return erros
-}
-
-// Monta a ocorrência final a partir do rascunho validado.
-export function criarOcorrencia(rascunho, { id, usuario, autor, agora = new Date() }) {
-  return {
-    id,
-    obraId: autor.obraId,
-    tipo: rascunho.tipo,
-    autorId: autor.id,
-    registradoPorId: usuario.id,
-    dataHora: agora.toISOString(),
-    descricao: rascunho.descricao?.trim() ?? '',
-    foto: rascunho.foto,
-    // RN07 — EPIs descartados quando o tipo é Risco Identificado.
-    epis: permiteAssociarEpi(rascunho.tipo) ? rascunho.epis ?? [] : [],
-  }
-}
-
-// RN08 — uma notificação por trabalhador da obra da ocorrência.
-export function gerarNotificacoes(ocorrencia, trabalhadores, proximoId) {
-  return trabalhadores
-    .filter((t) => t.obraId === ocorrencia.obraId)
-    .map((t, i) => ({
-      id: proximoId + i,
-      destinatarioId: t.id,
-      ocorrenciaId: ocorrencia.id,
-      lida: false,
-    }))
 }
