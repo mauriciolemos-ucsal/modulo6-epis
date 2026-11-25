@@ -1,0 +1,16 @@
+=== T01 RN09 — 2026-11-25 07:52:36 ===
+-- Carlos Souza (000123, não Fiscal) GET /api/painel
+{"erros":["Acesso restrito a usuários com permissão de Fiscal."]}
+HTTP 403
+-- Maria Lima (000125, Fiscal) GET /api/painel
+{"total":35,"contagem":{"RISCO":14,"QUASE_ACIDENTE":12,"ACIDENTE":9},"papeis":{"faltou":7,"falhou":4,"ajudou":8},"percentualConformes":56,"naoConformes":[{"trabalhadorId":"t1","nome":"Carlos Souza","faltando":["oculos"]},{"trabalhadorId":"t10","nome":"Edson Moreira","faltando":["bota","jaqueta"]},{"trabalhadorId":"t3","nome":"Maria Lima","faltando":["mascara"]},{"trabalhadorId":"t6","nome":"Fernanda Alves","faltando":["jaqueta"]}]}
+HTTP 200
+
+
+=== T02 RN06 — 2026-11-25 07:52:36 ===
+-- Carlos POST /api/ocorrencias sem tipo e sem foto
+{"erros":["Selecione a classificação da ocorrência.","Anexe uma foto da ocorrência."]}
+HTTP 400
+-- Carlos POST /api/ocorrencias tipo inválido, sem foto
+{"erros":["Selecione a classificação da ocorrência.","Anexe uma foto da ocorrência."]}
+HTTP 400
